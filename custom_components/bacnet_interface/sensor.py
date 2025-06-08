@@ -133,14 +133,13 @@ class AnalogInputEntity(CoordinatorEntity[EcoPanelDataUpdateCoordinator], Sensor
 
     @property
     def native_unit_of_measurement(self) -> str:
-        if (
-            self.device_class == SensorDeviceClass.TEMPERATURE
-            and "celsius"
-            in self.coordinator.data.devices[self.deviceid]
-            .objects[self.objectid]
-            .units.lower()
-        ):
-            return UnitOfTemperature.CELSIUS
+        if (self.device_class == SensorDeviceClass.TEMPERATURE):
+            if "celsius" in self.coordinator.data.devices[self.deviceid].objects[self.objectid].units.lower():
+                return UnitOfTemperature.CELSIUS
+            elif "fahrenheit" in self.coordinator.data.devices[self.deviceid].objects[self.objectid].units.lower():
+                return UnitOfTemperature.FAHRENHEIT
+            else:
+                return None
         elif self.device_class == SensorDeviceClass.IRRADIANCE:
             return UnitOfIrradiance.WATTS_PER_SQUARE_METER
         elif (
