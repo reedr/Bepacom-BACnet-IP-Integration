@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import timedelta
+from typing import Any
 
 from aioecopanel import (DeviceDict, DeviceDictError, EcoPanelConnectionClosed,
                          EcoPanelError, Interface)
@@ -14,7 +15,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import (DataUpdateCoordinator,
                                                       UpdateFailed)
 
-from .const import DOMAIN, LOGGER, SCAN_INTERVAL
+from .const import ADDRESS_SCAN_INTERVAL, DOMAIN, LOGGER, SCAN_INTERVAL
 
 
 class EcoPanelDataUpdateCoordinator(DataUpdateCoordinator[DeviceDict]):
@@ -128,3 +129,29 @@ class EcoPanelDataUpdateCoordinator(DataUpdateCoordinator[DeviceDict]):
             self._use_websocket()
 
         return devicedict
+
+
+class EcoPanelAddressCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
+    """Poll the add-on for the BACnet and IP address of each device."""
+
+    def __init__(self, hass: HomeAssistant, interface: Interface) -> None:
+        """Initialize address updater"""
+        self.interface = interface
+
+        super().__init__(
+            hass,
+            LOGGER,
+            name=f"{DOMAIN}_addresses",
+            update_interval=ADDRESS_SCAN_INTERVAL,
+        )
+
+    async def _async_update_data(self) -> dict[str, dict[str, Any]]:
+        try:
+            addresses = await self.interface.request("/apiv2/addresses")
+        except EcoPanelError as error:
+            raise UpdateFailed(f"Could not get device addresses: {error}") from error
+
+        if not isinstance(addresses, dict):
+            raise UpdateFailed(f"Unexpected address response: {addresses}")
+
+        return addresses

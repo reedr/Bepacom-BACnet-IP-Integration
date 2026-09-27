@@ -19,7 +19,7 @@ from homeassistant.util.dt import utcnow
 
 from .const import STATETEXT_OFFSET  # JCO
 from .const import DOMAIN, LOGGER
-from .coordinator import EcoPanelDataUpdateCoordinator
+from .coordinator import EcoPanelAddressCoordinator, EcoPanelDataUpdateCoordinator
 from .helper import (bacnet_to_device_class, bacnet_to_ha_units,
                      decimal_places_needed)
 
@@ -33,11 +33,23 @@ async def async_setup_entry(
     coordinator: EcoPanelDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
     entity_list: list = []
 
+    address_coordinator = EcoPanelAddressCoordinator(hass, coordinator.interface)
+    await address_coordinator.async_refresh()
+
     # Collect from all devices the objects that can become a sensor
     for deviceid in coordinator.data.devices:
         if not coordinator.data.devices[deviceid].objects:
             LOGGER.warning(f"No objects in {deviceid}!")
             continue
+
+        entity_list.append(DeviceIdEntity(coordinator=coordinator, deviceid=deviceid))
+        entity_list.append(
+            IpAddressEntity(
+                coordinator=address_coordinator,
+                data_coordinator=coordinator,
+                deviceid=deviceid,
+            )
+        )
 
         for objectid in coordinator.data.devices[deviceid].objects:
             if (
@@ -317,3 +329,76 @@ class MultiStateInputEntity(
             .objects[self.deviceid]
             .modelName,
         )
+
+
+def bacnet_device_info(
+    coordinator: EcoPanelDataUpdateCoordinator, deviceid: str
+) -> DeviceInfo:
+    """Device info for a BACnet device, based on its device object."""
+    device_object = coordinator.data.devices[deviceid].objects.get(deviceid)
+    return DeviceInfo(
+        identifiers={(DOMAIN, deviceid)},
+        name=device_object.objectName if device_object else deviceid,
+        manufacturer=device_object.vendorName if device_object else None,
+        model=device_object.modelName if device_object else None,
+    )
+
+
+class DeviceIdEntity(CoordinatorEntity[EcoPanelDataUpdateCoordinator], SensorEntity):
+    """Diagnostic sensor showing the BACnet device instance."""
+
+    _attr_has_entity_name = True
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_icon = "mdi:identifier"
+    _attr_name = "Device ID"
+
+    def __init__(self, coordinator: EcoPanelDataUpdateCoordinator, deviceid: str):
+        super().__init__(coordinator=coordinator)
+        self.deviceid = deviceid
+        self._attr_unique_id = f"{deviceid}_deviceid"
+        self._attr_device_info = bacnet_device_info(coordinator, deviceid)
+
+    @property
+    def native_value(self) -> int | str:
+        instance = self.deviceid.split(":")[-1]
+        return int(instance) if instance.isdigit() else self.deviceid
+
+
+class IpAddressEntity(CoordinatorEntity[EcoPanelAddressCoordinator], SensorEntity):
+    """Diagnostic sensor showing the IP address of a BACnet device.
+
+    For routed devices this is the address of the router, the full BACnet
+    address is available as an attribute.
+    """
+
+    _attr_has_entity_name = True
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_icon = "mdi:ip-network"
+    _attr_name = "IP address"
+
+    def __init__(
+        self,
+        coordinator: EcoPanelAddressCoordinator,
+        data_coordinator: EcoPanelDataUpdateCoordinator,
+        deviceid: str,
+    ):
+        super().__init__(coordinator=coordinator)
+        self.deviceid = deviceid
+        self._attr_unique_id = f"{deviceid}_ipaddress"
+        self._attr_device_info = bacnet_device_info(data_coordinator, deviceid)
+
+    @property
+    def _address(self) -> dict[str, Any]:
+        return (self.coordinator.data or {}).get(self.deviceid) or {}
+
+    @property
+    def available(self) -> bool:
+        return super().available and bool(self._address)
+
+    @property
+    def native_value(self) -> str | None:
+        return self._address.get("ip_address")
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {"bacnet_address": self._address.get("address")}
