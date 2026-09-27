@@ -216,6 +216,12 @@ class MultiStateOutputEntity(
                 .objects[self.objectid]
                 .statusFlags[3]
             ),
+            "reliability": self.coordinator.data.devices[self.deviceid]
+            .objects[self.objectid]
+            .reliability,
+            "eventState": self.coordinator.data.devices[self.deviceid]
+            .objects[self.objectid]
+            .eventState,
         }
 
     async def async_select_option(self, option: str) -> None:
@@ -365,6 +371,12 @@ class MultiStateValueEntity(
                 .objects[self.objectid]
                 .statusFlags[3]
             ),
+            "reliability": self.coordinator.data.devices[self.deviceid]
+            .objects[self.objectid]
+            .reliability,
+            "eventState": self.coordinator.data.devices[self.deviceid]
+            .objects[self.objectid]
+            .eventState,
         }
 
     async def async_select_option(self, option: str) -> None:

@@ -233,6 +233,12 @@ class AnalogOutputEntity(
                 .objects[self.objectid]
                 .statusFlags[3]
             ),
+            "reliability": self.coordinator.data.devices[self.deviceid]
+            .objects[self.objectid]
+            .reliability,
+            "eventState": self.coordinator.data.devices[self.deviceid]
+            .objects[self.objectid]
+            .eventState,
         }
 
     @property
@@ -421,6 +427,12 @@ class AnalogValueEntity(CoordinatorEntity[EcoPanelDataUpdateCoordinator], Number
                 .objects[self.objectid]
                 .statusFlags[3]
             ),
+            "reliability": self.coordinator.data.devices[self.deviceid]
+            .objects[self.objectid]
+            .reliability,
+            "eventState": self.coordinator.data.devices[self.deviceid]
+            .objects[self.objectid]
+            .eventState,
         }
 
     @property

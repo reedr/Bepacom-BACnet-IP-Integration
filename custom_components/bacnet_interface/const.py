@@ -13,7 +13,7 @@ DOMAIN = "bacnet_interface"
 
 LOGGER = logging.getLogger(__package__)
 SCAN_INTERVAL = timedelta(seconds=60)
-ADDRESS_SCAN_INTERVAL = timedelta(minutes=5)
+DEVICE_INFO_SCAN_INTERVAL = timedelta(minutes=5)
 
 STATETEXT_OFFSET = 1  # JCO
 

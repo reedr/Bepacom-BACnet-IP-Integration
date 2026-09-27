@@ -163,6 +163,12 @@ class BinaryValueEntity(CoordinatorEntity[EcoPanelDataUpdateCoordinator], Switch
                 .objects[self.objectid]
                 .statusFlags[3]
             ),
+            "reliability": self.coordinator.data.devices[self.deviceid]
+            .objects[self.objectid]
+            .reliability,
+            "eventState": self.coordinator.data.devices[self.deviceid]
+            .objects[self.objectid]
+            .eventState,
         }
 
     async def async_turn_on(self, **kwargs: Any) -> None:
@@ -301,6 +307,12 @@ class BinaryOutputEntity(
                 .objects[self.objectid]
                 .statusFlags[3]
             ),
+            "reliability": self.coordinator.data.devices[self.deviceid]
+            .objects[self.objectid]
+            .reliability,
+            "eventState": self.coordinator.data.devices[self.deviceid]
+            .objects[self.objectid]
+            .eventState,
         }
 
     async def async_turn_on(self, **kwargs: Any) -> None:

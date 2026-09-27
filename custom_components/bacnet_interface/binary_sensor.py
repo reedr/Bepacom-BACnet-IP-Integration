@@ -163,4 +163,10 @@ class BinaryInputEntity(
                 .objects[self.objectid]
                 .statusFlags[3]
             ),
+            "reliability": self.coordinator.data.devices[self.deviceid]
+            .objects[self.objectid]
+            .reliability,
+            "eventState": self.coordinator.data.devices[self.deviceid]
+            .objects[self.objectid]
+            .eventState,
         }
