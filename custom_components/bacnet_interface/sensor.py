@@ -514,7 +514,7 @@ class CovSubscriptionsEntity(DeviceInfoEntity):
         return {
             "own": subscriptions.get("own"),
             "by_recipient": subscriptions.get("by_recipient"),
-            "min_time_remaining_others": subscriptions.get(
-                "min_time_remaining_others"
+            "min_time_remaining_by_recipient": subscriptions.get(
+                "min_time_remaining_by_recipient"
             ),
         }
