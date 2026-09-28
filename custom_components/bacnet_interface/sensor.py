@@ -57,6 +57,7 @@ async def async_setup_entry(
             )
             for entity_class in (
                 IpAddressEntity,
+                HealthEntity,
                 SystemStatusEntity,
                 DatabaseRevisionEntity,
                 CovSubscriptionsEntity,
@@ -464,6 +465,44 @@ class IpAddressEntity(DeviceInfoEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         return {"bacnet_address": self._info.get("address")}
+
+
+class HealthEntity(DeviceInfoEntity):
+    """Diagnostic sensor summarising device health.
+
+    ok, unreachable, not_operational or missing_subscriptions: the device
+    doesn't hold every CoV subscription this interface expects, or rejected
+    some of them.
+    """
+
+    _attr_icon = "mdi:heart-pulse"
+    _attr_name = "Health"
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = ["ok", "unreachable", "not_operational", "missing_subscriptions"]
+    _info_key = "health"
+    _unique_suffix = "health"
+
+    @property
+    def native_value(self) -> str | None:
+        return self._info.get("health")
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        subscriptions = self._info.get("cov_subscriptions") or {}
+        return {
+            "reachable": self._info.get("reachable"),
+            "last_checked": self._info.get("checked"),
+            "last_seen": self._info.get("updated"),
+            "system_status": self._info.get("systemStatus"),
+            "last_cov_received": self._info.get("last_cov_received"),
+            "expected": subscriptions.get("expected"),
+            "confirmed": subscriptions.get("confirmed"),
+            "missing": subscriptions.get("missing"),
+            "missing_objects": subscriptions.get("missing_objects"),
+            "rejected": subscriptions.get("rejected"),
+            "rejected_objects": subscriptions.get("rejected_objects"),
+            "unexpected_own": subscriptions.get("unexpected_own"),
+        }
 
 
 class SystemStatusEntity(DeviceInfoEntity):
